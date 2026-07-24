@@ -1,6 +1,5 @@
 # `runtyp`
 
-[![build status](https://github.com/aeroview/runtyp/actions/workflows/release.yml/badge.svg)](https://github.com/aeroview/runtyp/actions) 
 ![Code Coverage](https://img.shields.io/badge/Code%20Coverage%20-%20100%25%20-%20%2331c352)
 [![SemVer](https://img.shields.io/badge/SemVer-2.0.0-blue)]()
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
