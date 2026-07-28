@@ -1,4 +1,5 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 const regexWithoutLocalhost = /^(http|https):\/\/([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?(#\S*)?$/;
 const regexWithoutLocalhostOptional = /^((http|https):\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?(#\S*)?$/;
@@ -10,7 +11,7 @@ export function url(options?: {
     requireProtocol?: boolean
 }): Pred<string> {
 
-    return (value: unknown): ValidationResult<string> => {
+    return attachPredMeta((value: unknown): ValidationResult<string> => {
 
         if (typeof value !== 'string') {
 
@@ -43,6 +44,6 @@ export function url(options?: {
 
         }
 
-    };
+    }, {kind: 'string', opts: {format: 'uri'}});
 
 }

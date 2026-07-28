@@ -1,4 +1,5 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 /**
  * Extracts the type from a ValidationResult.
@@ -14,7 +15,7 @@ export function union<T extends readonly Pred<any>[]>(
     errorMessage: string,
 ): Pred<ExtractResultType<T[number]>> {
 
-    return (value: unknown): ValidationResult<ExtractResultType<T[number]>> => {
+    return attachPredMeta((value: unknown): ValidationResult<ExtractResultType<T[number]>> => {
 
         for (const predicate of predicates) {
 
@@ -33,6 +34,6 @@ export function union<T extends readonly Pred<any>[]>(
             errors: {root: errorMessage},
         };
 
-    };
+    }, {kind: 'union', predicates: [...predicates]});
 
 }

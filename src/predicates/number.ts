@@ -1,10 +1,13 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 export function number(opts?: {
     range?: {min: number, max: number}
+    description?: string
+    title?: string
 }): Pred<number> {
 
-    return (value: unknown): ValidationResult<number> => {
+    return attachPredMeta((value: unknown): ValidationResult<number> => {
 
         if (typeof value !== 'number') {
 
@@ -20,6 +23,6 @@ export function number(opts?: {
 
         return {isValid: true, value: value as number};
 
-    };
+    }, {kind: 'number', opts});
 
 }

@@ -1,8 +1,9 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
-export function boolean(): Pred<boolean> {
+export function boolean(opts?: { description?: string, title?: string }): Pred<boolean> {
 
-    return (value: unknown): ValidationResult<boolean> => {
+    return attachPredMeta((value: unknown): ValidationResult<boolean> => {
 
         if (typeof value !== 'boolean') {
 
@@ -18,6 +19,6 @@ export function boolean(): Pred<boolean> {
             value: value as boolean,
         };
 
-    };
+    }, {kind: 'boolean', opts});
 
 }

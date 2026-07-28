@@ -1,8 +1,12 @@
 /* eslint-disable max-lines-per-function */
 import {InferShape, Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 type ObjectOptions = {
     allowUnknownKeys?: boolean
+    description?: string
+    title?: string
+    name?: string
 };
 
 export function object<T extends Record<string, Pred<any>>>(
@@ -29,7 +33,7 @@ export function object<T extends Record<string, Pred<any>>>(
     if (!schema) {
 
         // No schema provided - just validate it's an object
-        return (value: unknown): ValidationResult<Record<string, any>> => {
+        return attachPredMeta((value: unknown): ValidationResult<Record<string, any>> => {
 
             if (typeof value !== 'object' || !value || Array.isArray(value)) {
 
@@ -42,11 +46,11 @@ export function object<T extends Record<string, Pred<any>>>(
                 value: value as Record<string, any>,
             };
 
-        };
+        }, {kind: 'object', opts});
 
     }
 
-    return (value: unknown): ValidationResult<InferShape<T>> => {
+    return attachPredMeta((value: unknown): ValidationResult<InferShape<T>> => {
 
         if (typeof value !== 'object' || !value) {
 
@@ -109,6 +113,6 @@ export function object<T extends Record<string, Pred<any>>>(
             value: value as InferShape<T>,
         };
 
-    };
+    }, {kind: 'object', schema, opts});
 
 }

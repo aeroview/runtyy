@@ -1,9 +1,10 @@
 /* eslint-disable max-lines-per-function */
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 export function password(): Pred<string> {
 
-    return (password: unknown): ValidationResult<string> => {
+    return attachPredMeta((password: unknown): ValidationResult<string> => {
 
         if (typeof password !== 'string') {
 
@@ -66,6 +67,6 @@ export function password(): Pred<string> {
             value: password,
         };
 
-    };
+    }, {kind: 'string', opts: {len: {min: 8, max: 100}}});
 
 }

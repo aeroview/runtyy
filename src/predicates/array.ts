@@ -1,8 +1,11 @@
 /* eslint-disable max-lines-per-function */
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 type Opts = {
     len?: {min?: number, max?: number}
+    description?: string
+    title?: string
 };
 
 export function array<T>(
@@ -10,7 +13,7 @@ export function array<T>(
     options?: Opts,
 ): Pred<T[]> {
 
-    return (value: unknown): ValidationResult<T[]> => {
+    return attachPredMeta((value: unknown): ValidationResult<T[]> => {
 
         if (!Array.isArray(value)) {
 
@@ -99,6 +102,6 @@ export function array<T>(
             value: validItems,
         };
 
-    };
+    }, {kind: 'array', item: predicate, opts: options});
 
 }
