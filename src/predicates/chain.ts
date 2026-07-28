@@ -1,4 +1,5 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 /**
  * Returns a predicate that checks if all predicates in the chain return true.
@@ -8,7 +9,7 @@ import {Pred, ValidationResult} from '..';
  */
 export function chain<T>(...predicates: Pred<T>[]): Pred<T> {
 
-    return (value: unknown): ValidationResult<T> => {
+    return attachPredMeta((value: unknown): ValidationResult<T> => {
 
         for (const predicate of predicates) {
 
@@ -27,6 +28,6 @@ export function chain<T>(...predicates: Pred<T>[]): Pred<T> {
             value: value as T,
         };
 
-    };
+    }, {kind: 'chain', predicates});
 
 }

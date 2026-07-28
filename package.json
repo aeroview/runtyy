@@ -1,8 +1,8 @@
 {
   "name": "runtyp",
   "version": "1.0.0",
-    "description": "Lightning-fast, zero-dependency runtime validation for TS/JS. 25x faster and 15x smaller than zod (4kb vs 60kb gzipped).",
-    "keywords": [
+  "description": "Lightning-fast, zero-dependency runtime validation for TS/JS. 25x faster and 15x smaller than zod (4kb vs 60kb gzipped).",
+  "keywords": [
     "joi",
     "zod",
     "myzod",
@@ -35,7 +35,8 @@
     "benchmark": "npm run build && node benchmark.js",
     "lint": "eslint . --fix",
     "build": "tsc",
-    "validate": "npm run build && npm run lint && npm test"
+    "validate": "npm run check:package-json && npm run build && npm run lint && npm test",
+    "check:package-json": "node scripts/check-no-file-deps.mjs"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"

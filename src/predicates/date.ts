@@ -1,12 +1,13 @@
 /* eslint-disable max-lines-per-function */
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 export function date(opts?: {
     allowString?: boolean
     allowTimestamp?: boolean
 }): Pred<Date> {
 
-    return (value: unknown): ValidationResult<Date> => {
+    return attachPredMeta((value: unknown): ValidationResult<Date> => {
 
         if (value instanceof Date) {
 
@@ -71,7 +72,7 @@ export function date(opts?: {
             errors: {root: 'must be a Date object'},
         };
 
-    };
+    }, {kind: 'date'});
 
 }
 

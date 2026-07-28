@@ -1,11 +1,12 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 export function regex(
     exp: RegExp,
     errorMessage: string,
 ): Pred<string> {
 
-    return (value: unknown): ValidationResult<string> => {
+    return attachPredMeta((value: unknown): ValidationResult<string> => {
 
         if (typeof value !== 'string') {
 
@@ -30,6 +31,6 @@ export function regex(
             value,
         };
 
-    };
+    }, {kind: 'string', opts: {pattern: exp.source}});
 
 }

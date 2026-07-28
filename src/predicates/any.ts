@@ -1,11 +1,12 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 export function any(): Pred<any> {
 
-    return (value: unknown): ValidationResult<any> => ({
+    return attachPredMeta((value: unknown): ValidationResult<any> => ({
         isValid: true,
         value,
-    });
+    }), {kind: 'any'});
 
 }
 

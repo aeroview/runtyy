@@ -1,5 +1,6 @@
 
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 const tester = /^[-!#$%&'*+/0-9=?A-Z^_a-z`{|}~](\.?[-!#$%&'*+/0-9=?A-Z^_a-z`{|}~])*@[a-zA-Z0-9](-*\.?[a-zA-Z0-9])*\.[a-zA-Z](-?[a-zA-Z0-9])+$/;
 
@@ -14,7 +15,7 @@ const INVALID_EMAIL_ERROR = {
  */
 export function email(): Pred<string> {
 
-    return (value: unknown): ValidationResult<string> => {
+    return attachPredMeta((value: unknown): ValidationResult<string> => {
 
         if (typeof value !== 'string') {
 
@@ -62,6 +63,6 @@ export function email(): Pred<string> {
             value: value as string,
         };
 
-    };
+    }, {kind: 'string', opts: {format: 'email'}});
 
 }

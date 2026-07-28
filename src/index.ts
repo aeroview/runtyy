@@ -25,3 +25,7 @@ Partial<Pick<T, OptionalKeys<T>>> extends infer O
     : never;
 
 export * as predicates from './predicates';
+export {toJsonSchema} from './toJsonSchema';
+export type {JsonSchema} from './toJsonSchema';
+export {getPredMeta, PRED_META} from './predMeta';
+export type {PredMeta, JsonSchemaFieldMeta} from './predMeta';

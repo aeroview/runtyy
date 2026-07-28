@@ -1,4 +1,5 @@
 import {Pred, ValidationResult} from '..';
+import {attachPredMeta} from '../predMeta';
 
 const tester = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
 
@@ -7,7 +8,7 @@ const tester = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{
  */
 export function uuidv4(): Pred<string> {
 
-    return (value: unknown): ValidationResult<string> => {
+    return attachPredMeta((value: unknown): ValidationResult<string> => {
 
         if (typeof value !== 'string') {
 
@@ -25,7 +26,7 @@ export function uuidv4(): Pred<string> {
 
         }
 
-    };
+    }, {kind: 'string', opts: {format: 'uuid'}});
 
 }
 
