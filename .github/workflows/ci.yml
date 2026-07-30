@@ -8,7 +8,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +27,6 @@ jobs:
       - name: Check package.json deps
         run: node scripts/check-no-file-deps.mjs
       - name: Install dependencies
-        timeout-minutes: 3
         run: npm ci
 
       - name: Build
@@ -42,7 +41,7 @@ jobs:
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -57,7 +56,6 @@ jobs:
       - name: Check package.json deps
         run: node scripts/check-no-file-deps.mjs
       - name: Install dependencies
-        timeout-minutes: 3
         run: npm ci
 
       - name: Type check
