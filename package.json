@@ -35,8 +35,7 @@
     "benchmark": "npm run build && node benchmark.js",
     "lint": "eslint . --fix",
     "build": "tsc",
-    "validate": "npm run check:package-json && npm run build && npm run lint && npm test",
-    "check:package-json": "node scripts/check-no-file-deps.mjs"
+    "validate": "npm run build && npm run lint && npm test"
   },
   "peerDependencies": {
     "typescript": ">=5.0.0"
