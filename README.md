@@ -5,11 +5,11 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![AutoRel](https://img.shields.io/badge/%F0%9F%9A%80%20AutoRel-2D4DDE)](https://github.com/mhweiner/autorel)
 
-Lightning-fast, zero-dependency runtime type validation for TS/JS. ~9× faster and 15× smaller than zod (4kb vs 60kb gzipped).
+Lightning-fast, zero-dependency runtime type validation for TS/JS. ~14× faster and 15× smaller than zod (4kb vs 60kb gzipped).
 
 **🚀 Fast & reliable performance**  
 
-- ~9× faster than `zod`, ~6× faster than `joi`, ~87× faster than `yup` (see [Performance](#performance))
+- ~14× faster than `zod`, ~9× faster than `joi`, ~160× faster than `yup` (see [Performance](#performance))
 - Supports tree-shaking via ES Modules so you only bundle what you use
 - No dependencies
 - 100% test coverage
@@ -42,16 +42,16 @@ Lightning-fast, zero-dependency runtime type validation for TS/JS. ~9× faster a
  
 # Performance
 
-Each library validates the same **API event-ingestion payload** (nested objects, enums, UUIDs, URL arrays, string map) **100,000 times with valid input** and **100,000 times with invalid input** (**200,000 runs total**). Lower total time is faster.
+Each library validates the same nested user object **100,000 times with valid input** and **100,000 times with invalid input** (**200,000 runs total**). Lower total time is faster.
 
 **Versions tested:** runtyp 1.0.0 · joi 18.2.3 · zod 4.4.3 · yup 1.7.1 · Node v24.16.0
 
 | Library | Version | Total time (200k runs) | vs runtyp |
 |---------|---------|------------------------|-----------|
-| **runtyp** | 1.0.0 | **410 ms** | fastest |
-| **joi** | 18.2.3 | 2,634 ms | 6.4× slower |
-| **zod** | 4.4.3 | 3,815 ms | 9.3× slower |
-| **yup** | 1.7.1 | 35,781 ms | 87× slower |
+| **runtyp** | 1.0.0 | **97 ms** | fastest |
+| **joi** | 18.2.3 | 901 ms | 9.3× slower |
+| **zod** | 4.4.3 | 1,389 ms | 14.3× slower |
+| **yup** | 1.7.1 | 15,837 ms | 163× slower |
 
 Measured 2026-08-02 with pinned versions above. Invalid runs collect all field errors (same depth for every library). **[Full benchmark breakdown →](docs/benchmark.md)** (methodology, per-run timings, test schema, how to reproduce).
 

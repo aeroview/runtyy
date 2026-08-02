@@ -4,14 +4,12 @@ This page explains exactly what the runtyp performance numbers measure and how t
 
 ## What we measure
 
-Each library validates the **same API event-ingestion payload** — the kind of structured JSON an observability API might accept on ingest:
+Each library validates the **same nested user object** under the same rules:
 
-- top-level UUIDs, ISO timestamps, enums, and bounded strings
-- nested `source` and `actor` objects (service metadata + user context)
-- optional fields (`assigneeId`)
-- `tags` string array with length bounds
-- `occurrences` array of objects (timestamp, count, request URL)
-- `attributes` open string map (`Record<string, string>`)
+- top-level strings (name, email, phone)
+- numeric range (age)
+- nested address object (street, city, state, zip)
+- string array with minimum length (tags)
 
 For every library we run **two passes**:
 
@@ -20,7 +18,7 @@ For every library we run **two passes**:
 
 That is **200,000 validation runs per library**. Results are reported as **total wall-clock time** for each pass and combined. Lower is faster.
 
-Before timing, the script asserts that `validPayload` passes and `invalidPayload` fails for **every** library. If fixtures drift out of equivalence, the benchmark exits with an error instead of publishing misleading numbers.
+Before timing, the script asserts that `validUser` passes and `invalidUser` fails for **every** library. If fixtures drift out of equivalence, the benchmark exits with an error instead of publishing misleading numbers.
 
 Each library uses its normal non-throwing validation path where one exists (`runtyp` result object, Zod `safeParse`, Joi `validate`, Yup `validateSync` in try/catch). On invalid input, **all libraries collect every field error** — Joi and Yup use `abortEarly: false` so they validate the same depth as runtyp and Zod.
 
@@ -41,56 +39,39 @@ Environment: Node **v24.16.0** · run date **2026-08-02** · [`benchmark.js`](..
 
 | Library | Version | Valid (100k runs) | Invalid (100k runs) | **Total (200k runs)** | vs runtyp |
 |---------|---------|-------------------|---------------------|----------------------|-----------|
-| **runtyp** | 1.0.0 | 115 ms | 295 ms | **410 ms** | fastest |
-| **joi** | 18.2.3 | 846 ms | 1,788 ms | **2,634 ms** | 6.4× slower |
-| **zod** | 4.4.3 | 261 ms | 3,554 ms | **3,815 ms** | 9.3× slower |
-| **yup** | 1.7.1 | 2,413 ms | 33,368 ms | **35,781 ms** | 87× slower |
+| **runtyp** | 1.0.0 | 36 ms | 61 ms | **97 ms** | fastest |
+| **joi** | 18.2.3 | 293 ms | 608 ms | **901 ms** | 9.3× slower |
+| **zod** | 4.4.3 | 56 ms | 1,333 ms | **1,389 ms** | 14.3× slower |
+| **yup** | 1.7.1 | 878 ms | 14,959 ms | **15,837 ms** | 163× slower |
 
 ### Per-run averages
 
 | Library | Version | Avg valid pass | Avg invalid pass |
 |---------|---------|----------------|------------------|
-| **runtyp** | 1.0.0 | 0.0012 ms | 0.0029 ms |
-| **joi** | 18.2.3 | 0.0085 ms | 0.0179 ms |
-| **zod** | 4.4.3 | 0.0026 ms | 0.0355 ms |
-| **yup** | 1.7.1 | 0.0241 ms | 0.3337 ms |
+| **runtyp** | 1.0.0 | 0.0004 ms | 0.0006 ms |
+| **joi** | 18.2.3 | 0.0029 ms | 0.0061 ms |
+| **zod** | 4.4.3 | 0.0006 ms | 0.0133 ms |
+| **yup** | 1.7.1 | 0.0088 ms | 0.1496 ms |
 
-We use the latest pinned competitor versions and Zod's `safeParse` API for a fair comparison.
+Zod **4.4.3** is substantially faster on invalid data than older benchmark runs against Zod 4.1.x (combined total dropped from ~3.6 s to ~1.4 s). We use the latest pinned competitor versions and Zod's `safeParse` API for a fair comparison.
 
 ## Test schema
 
 All libraries express equivalent constraints. Example (runtyp):
 
 ```typescript
-const occurrence = p.object({
-    at: p.regex(ISO_DATETIME, 'must be ISO-8601 UTC datetime'),
-    count: p.number({range: {min: 1, max: 1_000_000}}),
-    requestUrl: p.url(),
-});
-
 p.object({
-    id: p.uuid(),
-    appId: p.uuid(),
-    occurredAt: p.regex(ISO_DATETIME, 'must be ISO-8601 UTC datetime'),
-    severity: p.enumValue(Severity),
-    message: p.string({len: {min: 1, max: 10_000}}),
-    fingerprint: p.string({len: {min: 1, max: 256}}),
-    source: p.object({
-        service: p.string({len: {min: 1, max: 128}}),
-        environment: p.string({len: {min: 1, max: 64}}),
-        host: p.string({len: {min: 1, max: 253}}),
-        release: p.regex(SEMVER, 'must be semver'),
-        region: p.string({len: {min: 1, max: 32}}),
+    name: p.string({len: {min: 1, max: 100}}),
+    email: p.email(),
+    age: p.number({range: {min: 0, max: 150}}),
+    phone: p.regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'must be valid phone format'),
+    address: p.object({
+        street: p.string({len: {min: 1}}),
+        city: p.string({len: {min: 1}}),
+        state: p.string({len: {min: 2, max: 2}}),
+        zip: p.regex(/^\d{5}$/, 'must be 5 digits'),
     }),
-    actor: p.object({
-        id: p.uuid(),
-        email: p.email(),
-        role: p.enumValue(Role),
-        assigneeId: p.optional(p.uuid()),
-    }),
-    tags: p.array(p.string({len: {min: 1, max: 64}}), {len: {min: 1, max: 50}}),
-    occurrences: p.array(occurrence, {len: {min: 1, max: 100}}),
-    attributes: p.record(p.string({len: {min: 1, max: 512}})),
+    tags: p.array(p.string(), {len: {min: 1}}),
 });
 ```
 
