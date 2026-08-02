@@ -22,11 +22,20 @@ Before timing, the script asserts that `validUser` passes and `invalidUser` fail
 
 Each library uses its normal non-throwing validation path where one exists (`runtyp` result object, Zod `safeParse`, Joi `validate`, Yup `validateSync` in try/catch). On invalid input, **all libraries collect every field error** — Joi and Yup use `abortEarly: false` so they validate the same depth as runtyp and Zod.
 
+## Versions tested
+
+All versions are **pinned exactly** in `package.json` and the lockfile:
+
+| Library | Version |
+|---------|---------|
+| **runtyp** | 1.0.0 |
+| **joi** | 18.2.3 |
+| **zod** | 4.4.3 |
+| **yup** | 1.7.1 |
+
+Environment: Node **v24.16.0** · run date **2026-08-02** · [`benchmark.js`](../benchmark.js)
+
 ## Latest results
-
-Run date: **2026-08-02** · Node **v24.16.0** · [`benchmark.js`](../benchmark.js)
-
-Competitor versions are **pinned exactly** in `package.json` (`zod` 4.4.3, `joi` 18.2.3, `yup` 1.7.1).
 
 | Library | Version | Valid (100k runs) | Invalid (100k runs) | **Total (200k runs)** | vs runtyp |
 |---------|---------|-------------------|---------------------|----------------------|-----------|
@@ -37,12 +46,12 @@ Competitor versions are **pinned exactly** in `package.json` (`zod` 4.4.3, `joi`
 
 ### Per-run averages
 
-| Library | Avg valid pass | Avg invalid pass |
-|---------|----------------|------------------|
-| **runtyp** | 0.0004 ms | 0.0006 ms |
-| **joi** | 0.0029 ms | 0.0061 ms |
-| **zod** | 0.0006 ms | 0.0133 ms |
-| **yup** | 0.0088 ms | 0.1496 ms |
+| Library | Version | Avg valid pass | Avg invalid pass |
+|---------|---------|----------------|------------------|
+| **runtyp** | 1.0.0 | 0.0004 ms | 0.0006 ms |
+| **joi** | 18.2.3 | 0.0029 ms | 0.0061 ms |
+| **zod** | 4.4.3 | 0.0006 ms | 0.0133 ms |
+| **yup** | 1.7.1 | 0.0088 ms | 0.1496 ms |
 
 Zod **4.4.3** is substantially faster on invalid data than older benchmark runs against Zod 4.1.x (combined total dropped from ~3.6 s to ~1.4 s). We use the latest pinned competitor versions and Zod's `safeParse` API for a fair comparison.
 

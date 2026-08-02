@@ -44,14 +44,16 @@ Lightning-fast, zero-dependency runtime type validation for TS/JS. ~14× faster 
 
 Each library validates the same nested user object **100,000 times with valid input** and **100,000 times with invalid input** (**200,000 runs total**). Lower total time is faster.
 
-| Library | Total time (200k runs) | vs runtyp |
-|---------|------------------------|-----------|
-| **runtyp** 1.0.0 | **97 ms** | fastest |
-| **joi** 18.2.3 | 901 ms | 9.3× slower |
-| **zod** 4.4.3 | 1,389 ms | 14.3× slower |
-| **yup** 1.7.1 | 15,837 ms | 163× slower |
+**Versions tested:** runtyp 1.0.0 · joi 18.2.3 · zod 4.4.3 · yup 1.7.1 · Node v24.16.0
 
-Measured 2026-08-02 on Node v24.16.0 with pinned competitor versions. Invalid runs collect all field errors (same depth for every library). **[Full benchmark breakdown →](docs/benchmark.md)** (methodology, per-run timings, test schema, how to reproduce).
+| Library | Version | Total time (200k runs) | vs runtyp |
+|---------|---------|------------------------|-----------|
+| **runtyp** | 1.0.0 | **97 ms** | fastest |
+| **joi** | 18.2.3 | 901 ms | 9.3× slower |
+| **zod** | 4.4.3 | 1,389 ms | 14.3× slower |
+| **yup** | 1.7.1 | 15,837 ms | 163× slower |
+
+Measured 2026-08-02 with pinned versions above. Invalid runs collect all field errors (same depth for every library). **[Full benchmark breakdown →](docs/benchmark.md)** (methodology, per-run timings, test schema, how to reproduce).
 
 # Installation
 

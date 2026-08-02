@@ -177,6 +177,12 @@ function benchmarkLibrary({name, version, validate}, iterations) {
 
 console.log('Validation library benchmark');
 console.log('============================');
+console.log('Versions tested:');
+libraries.forEach(({name, version}) => {
+    console.log(`  ${name} ${version}`);
+});
+console.log(`Node ${process.version}`);
+console.log('');
 console.log(`Each library validates the same user object ${ITERATIONS.toLocaleString()} times with valid data,`);
 console.log(`then ${ITERATIONS.toLocaleString()} times with invalid data (${(ITERATIONS * 2).toLocaleString()} runs total).`);
 console.log('Invalid runs collect all field errors (abortEarly: false for Joi/Yup).');
