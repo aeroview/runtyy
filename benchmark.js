@@ -4,7 +4,6 @@ const {performance} = require('perf_hooks');
 const fs = require('fs');
 const path = require('path');
 
-// Import validation libraries
 const {predicates: p} = require('./dist/index.js');
 const zod = require('zod');
 const joi = require('joi');
@@ -12,89 +11,228 @@ const yup = require('yup');
 
 const ITERATIONS = 100_000;
 
-// Test data — same payload for every library
-const validUser = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    age: 30,
-    phone: '(555) 123-4567',
-    address: {
-        street: '123 Main St',
-        city: 'Anytown',
-        state: 'CA',
-        zip: '12345',
+const Severity = Object.freeze({
+    DEBUG: 'debug',
+    INFO: 'info',
+    WARN: 'warn',
+    ERROR: 'error',
+});
+
+const Role = Object.freeze({
+    ADMIN: 'admin',
+    MEMBER: 'member',
+    VIEWER: 'viewer',
+});
+
+const ISO_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
+const SEMVER = /^\d+\.\d+\.\d+$/;
+
+// Realistic API event-ingestion payload (nested objects, enums, UUIDs, URL array items, string map)
+const validPayload = {
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    appId: '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
+    occurredAt: '2026-08-01T12:00:00.000Z',
+    severity: 'error',
+    message: 'Connection timeout while fetching user profile',
+    fingerprint: 'pg-timeout-users-v2',
+    source: {
+        service: 'api-service',
+        environment: 'production',
+        host: 'api-1.prod.example.com',
+        release: '2.5.1',
+        region: 'us-east-1',
     },
-    tags: ['developer', 'typescript', 'nodejs'],
+    actor: {
+        id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+        email: 'admin@example.com',
+        role: 'admin',
+    },
+    tags: ['timeout', 'postgres', 'critical'],
+    occurrences: [
+        {
+            at: '2026-08-01T12:00:00.000Z',
+            count: 1,
+            requestUrl: 'https://api.example.com/v1/users/profile',
+        },
+        {
+            at: '2026-08-01T12:01:15.000Z',
+            count: 4,
+            requestUrl: 'https://api.example.com/v1/teams/members',
+        },
+    ],
+    attributes: {
+        dbHost: 'postgres.internal',
+        queryMs: '842',
+        pool: 'primary',
+    },
 };
 
-const invalidUser = {
-    name: '',
-    email: 'invalid-email',
-    age: -5,
-    phone: 'not-a-phone',
-    address: {
-        street: '',
-        city: '',
-        state: 'INVALID',
-        zip: 'not-a-zip',
+const invalidPayload = {
+    id: 'not-a-uuid',
+    appId: 'also-bad',
+    occurredAt: 'yesterday',
+    severity: 'critical',
+    message: '',
+    fingerprint: '',
+    source: {
+        service: '',
+        environment: 'production',
+        host: '',
+        release: 'v2.5',
+        region: '',
+    },
+    actor: {
+        id: 'bad',
+        email: 'not-email',
+        role: 'superuser',
+        assigneeId: 'bad-uuid',
     },
     tags: [],
+    occurrences: [
+        {
+            at: 'invalid',
+            count: 0,
+            requestUrl: 'ftp://bad.example.com/evil',
+        },
+        {
+            at: '2026-08-01T12:00:00.000Z',
+            count: -1,
+            requestUrl: 'not-a-url',
+        },
+    ],
+    attributes: {
+        dbHost: 123,
+        queryMs: null,
+    },
 };
 
+const occurrenceRuntyp = p.object({
+    at: p.regex(ISO_DATETIME, 'must be ISO-8601 UTC datetime'),
+    count: p.number({range: {min: 1, max: 1_000_000}}),
+    requestUrl: p.url(),
+});
+
 const runtypSchema = p.object({
-    name: p.string({len: {min: 1, max: 100}}),
-    email: p.email(),
-    age: p.number({range: {min: 0, max: 150}}),
-    phone: p.regex(/^\(\d{3}\) \d{3}-\d{4}$/, 'must be valid phone format'),
-    address: p.object({
-        street: p.string({len: {min: 1}}),
-        city: p.string({len: {min: 1}}),
-        state: p.string({len: {min: 2, max: 2}}),
-        zip: p.regex(/^\d{5}$/, 'must be 5 digits'),
+    id: p.uuid(),
+    appId: p.uuid(),
+    occurredAt: p.regex(ISO_DATETIME, 'must be ISO-8601 UTC datetime'),
+    severity: p.enumValue(Severity),
+    message: p.string({len: {min: 1, max: 10_000}}),
+    fingerprint: p.string({len: {min: 1, max: 256}}),
+    source: p.object({
+        service: p.string({len: {min: 1, max: 128}}),
+        environment: p.string({len: {min: 1, max: 64}}),
+        host: p.string({len: {min: 1, max: 253}}),
+        release: p.regex(SEMVER, 'must be semver'),
+        region: p.string({len: {min: 1, max: 32}}),
     }),
-    tags: p.array(p.string(), {len: {min: 1}}),
+    actor: p.object({
+        id: p.uuid(),
+        email: p.email(),
+        role: p.enumValue(Role),
+        assigneeId: p.optional(p.uuid()),
+    }),
+    tags: p.array(p.string({len: {min: 1, max: 64}}), {len: {min: 1, max: 50}}),
+    occurrences: p.array(occurrenceRuntyp, {len: {min: 1, max: 100}}),
+    attributes: p.record(p.string({len: {min: 1, max: 512}})),
+});
+
+const occurrenceZod = zod.object({
+    at: zod.string().regex(ISO_DATETIME),
+    count: zod.number().int().min(1).max(1_000_000),
+    requestUrl: zod.string().url(),
 });
 
 const zodSchema = zod.object({
-    name: zod.string().min(1).max(100),
-    email: zod.string().email(),
-    age: zod.number().min(0).max(150),
-    phone: zod.string().regex(/^\(\d{3}\) \d{3}-\d{4}$/),
-    address: zod.object({
-        street: zod.string().min(1),
-        city: zod.string().min(1),
-        state: zod.string().length(2),
-        zip: zod.string().regex(/^\d{5}$/),
+    id: zod.string().uuid(),
+    appId: zod.string().uuid(),
+    occurredAt: zod.string().regex(ISO_DATETIME),
+    severity: zod.enum(['debug', 'info', 'warn', 'error']),
+    message: zod.string().min(1).max(10_000),
+    fingerprint: zod.string().min(1).max(256),
+    source: zod.object({
+        service: zod.string().min(1).max(128),
+        environment: zod.string().min(1).max(64),
+        host: zod.string().min(1).max(253),
+        release: zod.string().regex(SEMVER),
+        region: zod.string().min(1).max(32),
     }),
-    tags: zod.array(zod.string()).min(1),
+    actor: zod.object({
+        id: zod.string().uuid(),
+        email: zod.string().email(),
+        role: zod.enum(['admin', 'member', 'viewer']),
+        assigneeId: zod.string().uuid().optional(),
+    }),
+    tags: zod.array(zod.string().min(1).max(64)).min(1).max(50),
+    occurrences: zod.array(occurrenceZod).min(1).max(100),
+    attributes: zod.record(zod.string(), zod.string().min(1).max(512)),
+});
+
+const occurrenceJoi = joi.object({
+    at: joi.string().pattern(ISO_DATETIME).required(),
+    count: joi.number().integer().min(1).max(1_000_000).required(),
+    requestUrl: joi.string().uri().required(),
 });
 
 const joiSchema = joi.object({
-    name: joi.string().min(1).max(100).required(),
-    email: joi.string().email().required(),
-    age: joi.number().min(0).max(150).required(),
-    phone: joi.string().pattern(/^\(\d{3}\) \d{3}-\d{4}$/).required(),
-    address: joi.object({
-        street: joi.string().min(1).required(),
-        city: joi.string().min(1).required(),
-        state: joi.string().length(2).required(),
-        zip: joi.string().pattern(/^\d{5}$/).required(),
+    id: joi.string().uuid().required(),
+    appId: joi.string().uuid().required(),
+    occurredAt: joi.string().pattern(ISO_DATETIME).required(),
+    severity: joi.string().valid('debug', 'info', 'warn', 'error').required(),
+    message: joi.string().min(1).max(10_000).required(),
+    fingerprint: joi.string().min(1).max(256).required(),
+    source: joi.object({
+        service: joi.string().min(1).max(128).required(),
+        environment: joi.string().min(1).max(64).required(),
+        host: joi.string().min(1).max(253).required(),
+        release: joi.string().pattern(SEMVER).required(),
+        region: joi.string().min(1).max(32).required(),
     }).required(),
-    tags: joi.array().items(joi.string()).min(1).required(),
+    actor: joi.object({
+        id: joi.string().uuid().required(),
+        email: joi.string().email().required(),
+        role: joi.string().valid('admin', 'member', 'viewer').required(),
+        assigneeId: joi.string().uuid(),
+    }).required(),
+    tags: joi.array().items(joi.string().min(1).max(64)).min(1).max(50).required(),
+    occurrences: joi.array().items(occurrenceJoi).min(1).max(100).required(),
+    attributes: joi.object().pattern(joi.string(), joi.string().min(1).max(512)).required(),
+});
+
+const occurrenceYup = yup.object({
+    at: yup.string().matches(ISO_DATETIME).required(),
+    count: yup.number().integer().min(1).max(1_000_000).required(),
+    requestUrl: yup.string().url().required(),
 });
 
 const yupSchema = yup.object({
-    name: yup.string().min(1).max(100).required(),
-    email: yup.string().email().required(),
-    age: yup.number().min(0).max(150).required(),
-    phone: yup.string().matches(/^\(\d{3}\) \d{3}-\d{4}$/).required(),
-    address: yup.object({
-        street: yup.string().min(1).required(),
-        city: yup.string().min(1).required(),
-        state: yup.string().length(2).required(),
-        zip: yup.string().matches(/^\d{5}$/).required(),
+    id: yup.string().uuid().required(),
+    appId: yup.string().uuid().required(),
+    occurredAt: yup.string().matches(ISO_DATETIME).required(),
+    severity: yup.string().oneOf(['debug', 'info', 'warn', 'error']).required(),
+    message: yup.string().min(1).max(10_000).required(),
+    fingerprint: yup.string().min(1).max(256).required(),
+    source: yup.object({
+        service: yup.string().min(1).max(128).required(),
+        environment: yup.string().min(1).max(64).required(),
+        host: yup.string().min(1).max(253).required(),
+        release: yup.string().matches(SEMVER).required(),
+        region: yup.string().min(1).max(32).required(),
     }).required(),
-    tags: yup.array().of(yup.string()).min(1).required(),
+    actor: yup.object({
+        id: yup.string().uuid().required(),
+        email: yup.string().email().required(),
+        role: yup.string().oneOf(['admin', 'member', 'viewer']).required(),
+        assigneeId: yup.string().uuid().optional(),
+    }).required(),
+    tags: yup.array().of(yup.string().min(1).max(64)).min(1).max(50).required(),
+    occurrences: yup.array().of(occurrenceYup).min(1).max(100).required(),
+    attributes: yup.object().test('string-record', 'attributes must be a string map', (value) => {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            return false;
+        }
+        return Object.values(value).every((entry) => typeof entry === 'string' && entry.length >= 1 && entry.length <= 512);
+    }).required(),
 });
 
 const libraries = [
@@ -129,11 +267,11 @@ const libraries = [
 
 function assertFixtures(librariesToCheck) {
     for (const {name, validate} of librariesToCheck) {
-        if (!validate(validUser)) {
-            throw new Error(`${name}: validUser should pass validation`);
+        if (!validate(validPayload)) {
+            throw new Error(`${name}: validPayload should pass validation`);
         }
-        if (validate(invalidUser)) {
-            throw new Error(`${name}: invalidUser should fail validation`);
+        if (validate(invalidPayload)) {
+            throw new Error(`${name}: invalidPayload should fail validation`);
         }
     }
 }
@@ -150,11 +288,11 @@ function benchmarkLibrary({name, version, validate}, iterations) {
     console.log(`\nBenchmarking ${name}@${version}...`);
 
     for (let i = 0; i < 1000; i++) {
-        validate(validUser);
+        validate(validPayload);
     }
 
-    const validMs = timeRuns(validate, validUser, iterations);
-    const invalidMs = timeRuns(validate, invalidUser, iterations);
+    const validMs = timeRuns(validate, validPayload, iterations);
+    const invalidMs = timeRuns(validate, invalidPayload, iterations);
     const totalMs = validMs + invalidMs;
 
     const result = {
@@ -177,19 +315,20 @@ function benchmarkLibrary({name, version, validate}, iterations) {
 
 console.log('Validation library benchmark');
 console.log('============================');
+console.log('Scenario: API event-ingestion payload (nested objects, enums, UUIDs, URL arrays, string map)');
 console.log('Versions tested:');
 libraries.forEach(({name, version}) => {
     console.log(`  ${name} ${version}`);
 });
 console.log(`Node ${process.version}`);
 console.log('');
-console.log(`Each library validates the same user object ${ITERATIONS.toLocaleString()} times with valid data,`);
+console.log(`Each library validates the same payload ${ITERATIONS.toLocaleString()} times with valid data,`);
 console.log(`then ${ITERATIONS.toLocaleString()} times with invalid data (${(ITERATIONS * 2).toLocaleString()} runs total).`);
 console.log('Invalid runs collect all field errors (abortEarly: false for Joi/Yup).');
 console.log('Lower total time is faster. See docs/benchmark.md for methodology and per-run breakdown.');
 
 assertFixtures(libraries);
-console.log('\nFixture check passed: validUser passes and invalidUser fails for every library.');
+console.log('\nFixture check passed: validPayload passes and invalidPayload fails for every library.');
 
 const results = libraries.map((lib) => benchmarkLibrary(lib, ITERATIONS));
 results.sort((a, b) => a.totalMs - b.totalMs);
@@ -207,6 +346,7 @@ results.forEach((result, index) => {
 const payload = {
     runAt: new Date().toISOString(),
     nodeVersion: process.version,
+    scenario: 'api-event-ingestion',
     iterations: ITERATIONS,
     runsPerLibrary: ITERATIONS * 2,
     results,
