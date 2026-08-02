@@ -5,3 +5,4 @@ node_modules
 dist
 coverage
 conf/Conf.d.ts
+benchmark-results.json

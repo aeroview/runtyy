@@ -5,11 +5,11 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![AutoRel](https://img.shields.io/badge/%F0%9F%9A%80%20AutoRel-2D4DDE)](https://github.com/mhweiner/autorel)
 
-Lightning-fast, zero-dependency runtime type validation for TS/JS. 25x faster and 15x smaller than zod (4kb vs 60kb gzipped).
+Lightning-fast, zero-dependency runtime type validation for TS/JS. ~14× faster and 15× smaller than zod (4kb vs 60kb gzipped).
 
 **🚀 Fast & reliable performance**  
 
-- 25x faster than `zod` and `yup`, 4.3x faster than `joi` (see [Performance](#performance) section)
+- ~14× faster than `zod`, ~9× faster than `joi`, ~160× faster than `yup` (see [Performance](#performance))
 - Supports tree-shaking via ES Modules so you only bundle what you use
 - No dependencies
 - 100% test coverage
@@ -30,6 +30,7 @@ Lightning-fast, zero-dependency runtime type validation for TS/JS. 25x faster an
 # Table of contents
 
 - [Performance](#performance)
+- [Benchmark details](docs/benchmark.md)
 - [Example](#example)
 - [Taking advantage of tree-shaking](#taking-advantage-of-tree-shaking)
 - [Nested objects](#nested-objects)
@@ -41,16 +42,18 @@ Lightning-fast, zero-dependency runtime type validation for TS/JS. 25x faster an
  
 # Performance
 
-runtyp is designed for speed. Here's how it compares to other popular programmatic validation libraries:
+Each library validates the same nested user object **100,000 times with valid input** and **100,000 times with invalid input** (**200,000 runs total**). Lower total time is faster.
 
-| Library | Valid Data | Invalid Data | Total Time | Relative Speed |
-|---------|------------|--------------|------------|----------------|
-| **runtyp** | 0.0005ms | 0.0009ms | 142.47ms | 1.0x (fastest) |
-| **joi** | 0.0042ms | 0.0018ms | 607.70ms | 4.3x slower |
-| **yup** | 0.0145ms | 0.0209ms | 3532.78ms | 24.8x slower |
-| **zod** | 0.0007ms | 0.0357ms | 3637.74ms | 25.5x slower |
+**Versions tested:** runtyp 1.0.0 · joi 18.2.3 · zod 4.4.3 · yup 1.7.1 · Node v24.16.0
 
-*Benchmark results from 100,000 iterations of complex object validation with nested objects, arrays, and various validation rules. Lower times are better.*
+| Library | Version | Total time (200k runs) | vs runtyp |
+|---------|---------|------------------------|-----------|
+| **runtyp** | 1.0.0 | **97 ms** | fastest |
+| **joi** | 18.2.3 | 901 ms | 9.3× slower |
+| **zod** | 4.4.3 | 1,389 ms | 14.3× slower |
+| **yup** | 1.7.1 | 15,837 ms | 163× slower |
+
+Measured 2026-08-02 with pinned versions above. Invalid runs collect all field errors (same depth for every library). **[Full benchmark breakdown →](docs/benchmark.md)** (methodology, per-run timings, test schema, how to reproduce).
 
 # Installation
 
