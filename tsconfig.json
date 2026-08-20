@@ -2,8 +2,8 @@
   "compilerOptions": {
     "allowJs": true,
     "target": "ES2020",
-    "moduleResolution": "node",
-    "module": "CommonJS",
+    "moduleResolution": "node16",
+    "module": "Node16",
     "declaration": true,
     "lib": ["ES2020", "DOM"],
     "removeComments": false,
@@ -18,7 +18,7 @@
     "noImplicitReturns": false,
     "noImplicitUseStrict": false,
     "outDir": "dist",
-    "baseUrl": "src",
+    "rootDir": "src",
     "noEmitHelpers": false,
     "esModuleInterop": true
   },
